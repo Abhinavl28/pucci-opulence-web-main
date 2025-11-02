@@ -1,242 +1,215 @@
-# PUCCI Opulence Backend API
+# PUCCI Opulence Backend
 
-Backend REST API for the PUCCI Opulence e-commerce web application, built with Node.js, Express, Sequelize, and MySQL.
+Spring Boot REST API for the PUCCI Opulence e-commerce platform.
 
-## 🚀 Features
+## Technology Stack
 
-- **User Authentication**: JWT-based authentication with bcrypt password hashing
-- **Product Management**: CRUD operations for products with categories (Tops, Trousers)
-- **Shopping Cart**: Add, update, remove items with size and quantity management
-- **Order Management**: Create orders, view order history, order details
-- **Search Functionality**: Search products by name, description, or category
-- **MySQL Database**: Persistent data storage with Sequelize ORM
+- **Spring Boot 3.2.0**
+- **Java 17**
+- **Spring Data JPA**
+- **MySQL 8.0+**
+- **Maven**
+- **Lombok**
 
-## 📋 Prerequisites
+## Project Structure
 
-- Node.js (v16 or higher)
-- MySQL (v8.0 or higher)
-- npm or yarn
+```
+src/
+├── main/
+│   ├── java/com/pucci/opulence/
+│   │   ├── config/
+│   │   │   ├── CorsConfig.java          # CORS configuration
+│   │   │   └── DataInitializer.java     # Database seeding
+│   │   ├── controller/
+│   │   │   ├── AuthController.java      # Authentication endpoints
+│   │   │   ├── ProductController.java   # Product CRUD
+│   │   │   ├── CartController.java      # Shopping cart
+│   │   │   ├── OrderController.java     # Order management
+│   │   │   ├── SearchController.java    # Product search
+│   │   │   └── HealthController.java    # Health check
+│   │   ├── dto/
+│   │   │   ├── UserDTO.java
+│   │   │   ├── RegisterRequest.java
+│   │   │   ├── LoginRequest.java
+│   │   │   ├── CartRequest.java
+│   │   │   └── OrderRequest.java
+│   │   ├── model/
+│   │   │   ├── User.java                # User entity
+│   │   │   ├── Product.java             # Product entity
+│   │   │   ├── Cart.java                # Cart entity
+│   │   │   ├── Order.java               # Order entity
+│   │   │   └── OrderItem.java           # Order item entity
+│   │   ├── repository/
+│   │   │   ├── UserRepository.java
+│   │   │   ├── ProductRepository.java
+│   │   │   ├── CartRepository.java
+│   │   │   ├── OrderRepository.java
+│   │   │   └── OrderItemRepository.java
+│   │   ├── service/
+│   │   │   ├── UserService.java
+│   │   │   ├── ProductService.java
+│   │   │   ├── CartService.java
+│   │   │   └── OrderService.java
+│   │   └── PucciOpulenceApplication.java
+│   └── resources/
+│       └── application.properties       # Configuration
+└── test/
+```
 
-## ⚙️ Installation
+## Database Schema
 
-1. **Clone the repository and navigate to backend folder**
-   ```bash
-   cd backend
-   ```
+### Users Table
+- id (PK, Auto Increment)
+- name
+- email (Unique)
+- phone
+- password_hash
+- created_at
+- updated_at
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+### Products Table
+- id (PK, Auto Increment)
+- name
+- category (ENUM: TOPS, TROUSERS)
+- description
+- price (Decimal)
+- images (JSON)
+- sizes
+- created_at
+- updated_at
 
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Edit `.env` and update the following:
-   ```env
-   PORT=5000
-   DB_HOST=localhost
-   DB_USER=root
-   DB_PASSWORD=yourpassword
-   DB_NAME=pucci_opulence
-   JWT_SECRET=your_jwt_secret_key_change_in_production
-   CORS_ORIGIN=http://localhost:5173
-   ```
+### Carts Table
+- id (PK, Auto Increment)
+- user_id (FK → Users)
+- product_id (FK → Products)
+- quantity
+- size
+- created_at
+- updated_at
 
-4. **Create MySQL database**
-   ```sql
-   CREATE DATABASE pucci_opulence;
-   ```
-   
-   Or use MySQL command line:
-   ```bash
-   mysql -u root -p -e "CREATE DATABASE pucci_opulence;"
-   ```
+### Orders Table
+- id (PK, Auto Increment)
+- user_id (FK → Users)
+- total_amount (Decimal)
+- status (ENUM: PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED)
+- shipping_address
+- shipping_city
+- shipping_state
+- shipping_zip
+- shipping_country
+- created_at
+- updated_at
 
-5. **Run the server**
-   ```bash
-   npm run dev
-   ```
-   
-   The server will automatically:
-   - Connect to the database
-   - Sync all models (create tables if they don't exist)
-   - Start listening on port 5000
+### Order Items Table
+- id (PK, Auto Increment)
+- order_id (FK → Orders)
+- product_id (FK → Products)
+- quantity
+- size
+- price (Decimal)
+- created_at
+- updated_at
 
-## 🗄️ Database Schema
-
-The following tables are automatically created by Sequelize:
-
-- **users**: User accounts with authentication
-- **products**: Product catalog (Tops, Trousers)
-- **carts**: Shopping cart items
-- **orders**: Customer orders
-- **order_items**: Individual items within orders
-
-## 📡 API Endpoints
+## API Endpoints
 
 ### Authentication
-
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/auth/signup` | POST | ❌ | Register new user |
-| `/api/auth/login` | POST | ❌ | Login user |
-| `/api/auth/profile` | GET | ✅ | Get user profile |
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - User login
+- `GET /api/auth/user/{id}` - Get user details
 
 ### Products
-
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/products` | GET | ❌ | Get all products |
-| `/api/products/:id` | GET | ❌ | Get product by ID |
-| `/api/products/category/:category` | GET | ❌ | Get products by category |
-| `/api/products` | POST | ❌ | Create product (admin) |
+- `GET /api/products` - List all products
+- `GET /api/products/{id}` - Get product by ID
+- `GET /api/products/category/{category}` - Filter by category
+- `POST /api/products` - Create product
+- `PUT /api/products/{id}` - Update product
+- `DELETE /api/products/{id}` - Delete product
 
 ### Cart
-
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/cart` | GET | ✅ | Get user's cart |
-| `/api/cart/add` | POST | ✅ | Add item to cart |
-| `/api/cart/:id` | PUT | ✅ | Update cart item quantity |
-| `/api/cart/:id` | DELETE | ✅ | Remove item from cart |
-| `/api/cart` | DELETE | ✅ | Clear entire cart |
+- `GET /api/cart/user/{userId}` - Get user cart
+- `POST /api/cart` - Add to cart
+- `PUT /api/cart/{id}` - Update cart item
+- `DELETE /api/cart/{id}` - Remove from cart
+- `DELETE /api/cart/user/{userId}` - Clear cart
 
 ### Orders
-
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/orders/create` | POST | ✅ | Create order from cart |
-| `/api/orders` | GET | ✅ | Get user's order history |
-| `/api/orders/:id` | GET | ✅ | Get order by ID |
+- `GET /api/orders/user/{userId}` - Get user orders
+- `GET /api/orders/{id}` - Get order details
+- `POST /api/orders` - Create order
+- `PUT /api/orders/{id}/status` - Update order status
 
 ### Search
+- `GET /api/search?q={query}` - Search products
 
-| Endpoint | Method | Auth | Description |
-|----------|--------|------|-------------|
-| `/api/search?query=searchterm` | GET | ❌ | Search products |
+### Health
+- `GET /api/health` - API health check
 
-## 🧪 Testing with Postman
+## Running the Application
 
-### 1. Sign Up
-```http
-POST http://localhost:5000/api/auth/signup
-Content-Type: application/json
-
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "phone": "1234567890",
-  "password": "password123"
-}
+### Development Mode
+```bash
+mvn spring-boot:run
 ```
 
-### 2. Login
-```http
-POST http://localhost:5000/api/auth/login
-Content-Type: application/json
-
-{
-  "email": "john@example.com",
-  "password": "password123"
-}
+### Build JAR
+```bash
+mvn clean package
 ```
 
-### 3. Get All Products
-```http
-GET http://localhost:5000/api/products
+### Run JAR
+```bash
+java -jar target/pucci-opulence-backend-1.0.0.jar
 ```
 
-### 4. Add to Cart (requires auth token)
-```http
-POST http://localhost:5000/api/cart/add
-Authorization: Bearer YOUR_JWT_TOKEN
-Content-Type: application/json
+## Configuration
 
-{
-  "product_id": 1,
-  "size": "M",
-  "quantity": 2
-}
+Edit `src/main/resources/application.properties`:
+
+```properties
+# Server
+server.port=5000
+
+# Database
+spring.datasource.url=jdbc:mysql://localhost:3306/pucci_opulence?createDatabaseIfNotExist=true
+spring.datasource.username=root
+spring.datasource.password=root
+
+# JPA
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
 ```
 
-### 5. Create Order (requires auth token)
-```http
-POST http://localhost:5000/api/orders/create
-Authorization: Bearer YOUR_JWT_TOKEN
-Content-Type: application/json
+## Features
 
-{
-  "shipping_name": "John Doe",
-  "shipping_address1": "123 Main St",
-  "shipping_address2": "Apt 4B",
-  "shipping_city": "Mumbai",
-  "shipping_state": "Maharashtra",
-  "shipping_pincode": "400001",
-  "shipping_phone": "1234567890",
-  "payment_method": "card"
-}
-```
+- ✅ RESTful API design
+- ✅ JPA/Hibernate ORM
+- ✅ Automatic database creation
+- ✅ Data seeding on startup
+- ✅ CORS enabled
+- ✅ Input validation
+- ✅ Exception handling
+- ✅ Simplified authentication (no JWT)
+- ✅ Transaction management
 
-### 6. Search Products
-```http
-GET http://localhost:5000/api/search?query=white
-```
+## Development Notes
 
-## 🔗 Frontend Integration
+- **No JWT Authentication**: Simplified for development
+- **Password Hashing**: SHA-256 (upgrade to BCrypt for production)
+- **CORS**: Configured for localhost:5173 and localhost:3000
+- **Auto DDL**: Database schema auto-updates on entity changes
+- **Data Seeding**: Automatic product seeding on first run
 
-1. **Update API base URL** in your React frontend:
-   ```javascript
-   const API_BASE_URL = "http://localhost:5000/api";
-   ```
+## Testing
 
-2. **Store JWT token** after login:
-   ```javascript
-   localStorage.setItem("token", response.data.token);
-   ```
+Access the API at: `http://localhost:5000/api`
 
-3. **Include token in requests**:
-   ```javascript
-   headers: {
-     "Authorization": `Bearer ${localStorage.getItem("token")}`,
-     "Content-Type": "application/json"
-   }
-   ```
+Health check: `http://localhost:5000/api/health`
 
-4. **Update AuthContext** to use API endpoints instead of localStorage
+## Dependencies
 
-5. **Update CartContext** to sync with backend API
-
-## 🛠️ Development
-
-- **Development mode with auto-reload**: `npm run dev`
-- **Production mode**: `npm start`
-
-## 📝 Notes
-
-- The database tables are automatically created/updated when the server starts
-- JWT tokens expire after 7 days
-- All passwords are hashed using bcrypt before storage
-- CORS is configured to allow requests from `http://localhost:5173` (Vite default port)
-
-## 🔒 Security Considerations
-
-- Change `JWT_SECRET` in production
-- Use environment variables for all sensitive data
-- Implement rate limiting for production
-- Add input validation middleware
-- Consider using HTTPS in production
-- Add admin role authentication for product creation
-
-## 🐛 Troubleshooting
-
-- **Database connection error**: Check MySQL is running and credentials in `.env` are correct
-- **Port already in use**: Change `PORT` in `.env` or stop the process using port 5000
-- **CORS errors**: Ensure `CORS_ORIGIN` in `.env` matches your frontend URL
-
-## 📄 License
-
-ISC
-
+- spring-boot-starter-web
+- spring-boot-starter-data-jpa
+- mysql-connector-j
+- lombok
+- spring-boot-starter-validation
+- spring-boot-devtools
